@@ -1,0 +1,41 @@
+# Dependencies
+node_modules/
+backend/tmp/
+backend/uploads/
+frontend/dist/
+.vite/
+
+# Environment Variables
+.env
+*.env.local
+*.env.*.local
+
+# Docker
+.docker/
+docker-compose.override.yml
+
+# OS Files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+api_full_logs.txt
+web_logs.txt
+web_logs_utf8.txt
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Project specific
+backend/internal/s3/r2.go.bak
+101.jpg
+102.jpg
+103.jpg
+104.jpg
+105.jpg
+pano.jpg
+favicon.png
