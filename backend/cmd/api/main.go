@@ -113,6 +113,7 @@ func main() {
 	authGroup.Post("/login", authHandler.Login)
 	authGroup.Post("/forgot-password", authHandler.ForgotPassword)
 	authGroup.Post("/reset-password", authHandler.ResetPassword)
+	authGroup.Get("/invitation-details", authHandler.GetInvitationDetails)
 	authGroup.Get("/me", auth.JWTMiddleware(), authHandler.GetProfile)
 
 	// Admin routes (Protected)

@@ -60,6 +60,11 @@ func (h *AuthHandler) Register(c *fiber.Ctx) error {
 		return c.Status(400).JSON(fiber.Map{"error": "Valid invitation token or registration code is required"})
 	}
 
+	// 3. Strict Email Validation for Invitations
+	if isInvite && req.Email != invitation.Email {
+		return c.Status(400).JSON(fiber.Map{"error": "This invitation is linked to a different email address. Please use the email that received the invitation."})
+	}
+
 	// SELF-HEALING: Check if a soft-deleted user exists with this email
 	var existingUser models.User
 	if err := h.DB.Unscoped().Where("email = ?", req.Email).First(&existingUser).Error; err == nil {
@@ -235,4 +240,21 @@ func (h *AuthHandler) ResetPassword(c *fiber.Ctx) error {
 	h.DB.Save(&user)
 
 	return c.JSON(fiber.Map{"message": "Password updated successfully"})
+}
+
+func (h *AuthHandler) GetInvitationDetails(c *fiber.Ctx) error {
+	token := c.Query("token")
+	if token == "" {
+		return c.Status(400).JSON(fiber.Map{"error": "Token is required"})
+	}
+
+	var invitation models.Invitation
+	if err := h.DB.Where("token = ? AND is_used = ? AND expires_at > ?", token, false, time.Now()).First(&invitation).Error; err != nil {
+		return c.Status(404).JSON(fiber.Map{"error": "Invalid or expired invitation token"})
+	}
+
+	return c.JSON(fiber.Map{
+		"email":    invitation.Email,
+		"is_admin": invitation.IsAdmin,
+	})
 }

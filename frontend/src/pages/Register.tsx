@@ -1,4 +1,4 @@
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { useSearchParams, Link, useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -23,6 +23,32 @@ export default function Register() {
         regCode: searchParams.get("code") || ""
     });
     const [loading, setLoading] = useState(false);
+    const [fetchingToken, setFetchingToken] = useState(false);
+
+    useEffect(() => {
+        const fetchInvitation = async () => {
+            const token = searchParams.get("token");
+            if (!token) return;
+
+            setFetchingToken(true);
+            try {
+                const res = await axios.get(`${API_URL}/api/auth/invitation-details?token=${token}`);
+                setFormData(prev => ({
+                    ...prev,
+                    email: res.data.email,
+                    token: token
+                }));
+            } catch (err) {
+                console.error("Failed to fetch invitation details:", err);
+                toast.error("Invalid or expired invitation link");
+                setFormData(prev => ({ ...prev, token: "" }));
+            } finally {
+                setFetchingToken(false);
+            }
+        };
+
+        fetchInvitation();
+    }, [searchParams]);
 
     const handleRegister = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -57,6 +83,19 @@ export default function Register() {
         }
     };
 
+    if (fetchingToken) {
+        return (
+            <div className="min-h-screen flex items-center justify-center bg-background p-4">
+                <Card className="w-full max-w-sm">
+                    <CardHeader className="text-center">
+                        <CardTitle className="animate-pulse">Verifying Invitation...</CardTitle>
+                        <CardDescription>Securing your institutional access</CardDescription>
+                    </CardHeader>
+                </Card>
+            </div>
+        );
+    }
+
     return (
         <div className="min-h-screen flex items-center justify-center bg-background p-4">
             <Card className="w-full max-w-sm">
@@ -75,7 +114,8 @@ export default function Register() {
                                     <LinkIcon className="h-3 w-3" />
                                     <p className="font-semibold uppercase text-[10px]">Invite Token Detected</p>
                                 </div>
-                                <p className="truncate font-mono opacity-80">{formData.token}</p>
+                                <p className="truncate font-mono opacity-80 mb-1">{formData.token}</p>
+                                <p className="text-blue-200/60 italic">Your email has been locked to the invitation recipient.</p>
                             </div>
                         ) : (
                             <div className="space-y-2">
@@ -128,6 +168,8 @@ export default function Register() {
                                 required
                                 value={formData.email}
                                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                                disabled={!!formData.token}
+                                className={formData.token ? "bg-muted text-muted-foreground" : ""}
                             />
                         </div>
                         <div className="space-y-2">
