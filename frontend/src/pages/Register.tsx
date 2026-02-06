@@ -24,6 +24,7 @@ export default function Register() {
     });
     const [loading, setLoading] = useState(false);
     const [fetchingToken, setFetchingToken] = useState(false);
+    const [success, setSuccess] = useState(false);
 
     useEffect(() => {
         const fetchInvitation = async () => {
@@ -75,6 +76,7 @@ export default function Register() {
                 reg_code: formData.regCode
             });
             toast.success("Account created successfully!");
+            setSuccess(true);
             setTimeout(() => navigate("/login"), 3000);
         } catch (err: any) {
             toast.error(err.response?.data?.error || "Registration failed");
@@ -141,7 +143,7 @@ export default function Register() {
                                 required
                                 value={formData.fullName}
                                 onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                                disabled={loading}
+                                disabled={loading || success}
                             />
                         </div>
 
@@ -153,7 +155,7 @@ export default function Register() {
                                 required
                                 value={formData.userType}
                                 onChange={(e) => setFormData({ ...formData, userType: e.target.value })}
-                                disabled={loading}
+                                disabled={loading || success}
                             >
                                 <option value="Student">Student</option>
                                 <option value="Teacher/Professor">Teacher/Professor</option>
@@ -170,8 +172,8 @@ export default function Register() {
                                 required
                                 value={formData.email}
                                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                disabled={loading || !!formData.token}
-                                className={(loading || !!formData.token) ? "bg-muted text-muted-foreground" : ""}
+                                disabled={loading || success || !!formData.token}
+                                className={(loading || success || !!formData.token) ? "bg-muted text-muted-foreground" : ""}
                             />
                         </div>
                         <div className="space-y-2">
@@ -182,7 +184,7 @@ export default function Register() {
                                 required
                                 value={formData.password}
                                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                                disabled={loading}
+                                disabled={loading || success}
                             />
                         </div>
                         <div className="space-y-2">
@@ -193,13 +195,13 @@ export default function Register() {
                                 required
                                 value={formData.confirmPassword}
                                 onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
-                                disabled={loading}
+                                disabled={loading || success}
                             />
                         </div>
                     </CardContent>
                     <CardFooter className="flex flex-col gap-4">
-                        <Button className="w-full" disabled={loading || (!formData.token && !formData.regCode)}>
-                            {loading ? "Processing..." : "Create account"}
+                        <Button className="w-full" disabled={loading || success || (!formData.token && !formData.regCode)}>
+                            {loading ? "Processing..." : success ? "Account Ready!" : "Create account"}
                         </Button>
                         <p className="text-sm text-center text-muted-foreground">
                             Already have an account?{" "}
