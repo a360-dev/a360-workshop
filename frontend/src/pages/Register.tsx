@@ -141,6 +141,7 @@ export default function Register() {
                                 required
                                 value={formData.fullName}
                                 onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                                disabled={loading}
                             />
                         </div>
 
@@ -152,6 +153,7 @@ export default function Register() {
                                 required
                                 value={formData.userType}
                                 onChange={(e) => setFormData({ ...formData, userType: e.target.value })}
+                                disabled={loading}
                             >
                                 <option value="Student">Student</option>
                                 <option value="Teacher/Professor">Teacher/Professor</option>
@@ -168,8 +170,8 @@ export default function Register() {
                                 required
                                 value={formData.email}
                                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                                disabled={!!formData.token}
-                                className={formData.token ? "bg-muted text-muted-foreground" : ""}
+                                disabled={loading || !!formData.token}
+                                className={(loading || !!formData.token) ? "bg-muted text-muted-foreground" : ""}
                             />
                         </div>
                         <div className="space-y-2">
@@ -180,6 +182,7 @@ export default function Register() {
                                 required
                                 value={formData.password}
                                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                                disabled={loading}
                             />
                         </div>
                         <div className="space-y-2">
@@ -190,12 +193,13 @@ export default function Register() {
                                 required
                                 value={formData.confirmPassword}
                                 onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                                disabled={loading}
                             />
                         </div>
                     </CardContent>
                     <CardFooter className="flex flex-col gap-4">
                         <Button className="w-full" disabled={loading || (!formData.token && !formData.regCode)}>
-                            {loading ? "Creating Account..." : "Create account"}
+                            {loading ? "Processing..." : "Create account"}
                         </Button>
                         <p className="text-sm text-center text-muted-foreground">
                             Already have an account?{" "}
