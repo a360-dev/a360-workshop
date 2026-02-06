@@ -89,9 +89,9 @@ func (h *AuthHandler) Register(c *fiber.Ctx) error {
 	if isInvite {
 		isAdmin = invitation.IsAdmin
 		regSource = "Invitation"
-		// Invitations use their own expiry
+		// Invitations: Individual access starts upon registration
 		validFrom = time.Now()
-		expiresAt = invitation.ExpiresAt
+		expiresAt = validFrom.AddDate(0, 3, 0) // Fixed 3 months from registration for Workshop Phase
 	} else if isRegCode {
 		projectLimit = regCode.ProjectLimit
 		if regCode.StorageQuota > 0 {

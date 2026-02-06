@@ -55,7 +55,7 @@ func (h *AdminHandler) CreateInvitation(c *fiber.Ctx) error {
 		Email:     req.Email,
 		Token:     token,
 		IsAdmin:   req.IsAdmin,
-		ExpiresAt: time.Now().Add(24 * time.Hour), // 24 hours expiry
+		ExpiresAt: time.Now().AddDate(0, 3, 0), // 3 months expiry
 	}
 
 	if err := h.DB.Create(&invitation).Error; err != nil {
