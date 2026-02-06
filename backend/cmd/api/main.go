@@ -11,7 +11,6 @@ import (
 	"github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/joho/godotenv"
 
-	"golang.org/x/crypto/bcrypt"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 
@@ -71,21 +70,6 @@ func main() {
 	// SELF-HEALING: Populate ValidFrom and ExpiresAt for existing registration codes
 	db.Model(&models.RegistrationCode{}).Where("valid_from = ? OR valid_from IS NULL", time.Time{}).Update("valid_from", gorm.Expr("created_at"))
 	db.Model(&models.RegistrationCode{}).Where("expires_at = ? OR expires_at IS NULL", time.Time{}).Update("expires_at", gorm.Expr("created_at + interval '3 months'"))
-
-	// Seed admin user
-	var count int64
-	db.Model(&models.User{}).Count(&count)
-	if count == 0 {
-		hashedPassword, _ := bcrypt.GenerateFromPassword([]byte("password123"), 10)
-		db.Create(&models.User{
-			Email:        "admin@example.com",
-			Password:     string(hashedPassword),
-			IsAdmin:      true,
-			StorageQuota: 50 * 1024 * 1024 * 1024, // 50GB for admin
-			ProjectLimit: 1000,
-		})
-		log.Println("Seeded default admin user: admin@example.com / password123")
-	}
 
 	app := fiber.New(fiber.Config{
 		BodyLimit: 500 * 1024 * 1024, // 500MB for pano uploads
