@@ -2,11 +2,13 @@ package mail
 
 import (
 	"fmt"
+	"log"
 	"net/smtp"
 	"os"
 )
 
 func SendInvitation(toEmail, token string) error {
+	log.Printf("[MAIL] Sending Invitation to: %s", toEmail)
 	from := os.Getenv("SMTP_EMAIL")
 	password := os.Getenv("SMTP_PASSWORD")
 	smtpHost := "smtp.gmail.com"
@@ -15,7 +17,7 @@ func SendInvitation(toEmail, token string) error {
 	// Sender metadata
 	senderName := "A360 Workshop Platform"
 	displayEmail := "noreply@a360.co.th"
-	subject := "Welcome to A360! | Invitation to join our Virtual Tour Platform"
+	subject := "Invitation to join A360 Workshop Platform"
 
 	// Base URL for registration (pointing to frontend)
 	baseURL := os.Getenv("FRONTEND_URL")
@@ -38,7 +40,7 @@ func SendInvitation(toEmail, token string) error {
 		"<p><a href=\"%s\" style=\"display: inline-block; padding: 12px 24px; background-color: #000; color: #fff; text-decoration: none; border-radius: 4px; font-weight: bold;\">Register for A360</a></p>"+
 		"<p style=\"margin-top: 20px;\"><strong>A few things to note:</strong></p>"+
 		"<ul>"+
-		"<li><strong>Expiration:</strong> This link will expire in 24 hours for your security.</li>"+
+		"<li><strong>Expiration:</strong> This link will expire in 3 months for your security.</li>"+
 		"<li><strong>Access:</strong> Once registered, you'll be able to access the Studio to begin creating your first virtual tours.</li>"+
 		"</ul>"+
 		"<p>If you weren't expecting this invitation, you can safely ignore this email.</p>"+
@@ -54,6 +56,7 @@ func SendInvitation(toEmail, token string) error {
 	return nil
 }
 func SendWelcome(toEmail string) error {
+	log.Printf("[MAIL] Sending Welcome to: %s", toEmail)
 	from := os.Getenv("SMTP_EMAIL")
 	password := os.Getenv("SMTP_PASSWORD")
 	smtpHost := "smtp.gmail.com"
