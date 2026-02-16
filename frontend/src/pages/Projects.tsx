@@ -25,21 +25,9 @@ import {
     Play
 } from 'lucide-react';
 import axios from 'axios';
-import { cn } from '@/lib/utils';
+import { cn, getAssetUrl } from '@/lib/utils';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
-const R2_PUBLIC_URL = 'https://pub-2c6a4a0072774a308e398234fc12ea61.r2.dev';
-
-const getAssetUrl = (path: string) => {
-    if (!path) return '';
-    if (path.startsWith('http')) return path;
-    if (path.startsWith('media/') || path.includes('/cubemap') || path.includes('original.jpg') || path.includes('thumbnail.jpg')) {
-        if (!path.startsWith('uploads/')) {
-            return `${R2_PUBLIC_URL}/${path}`;
-        }
-    }
-    return `${API_URL}/${path.replace(/^\.\//, '')}`;
-};
 
 const MAX_RESOLUTION_W = 8000;
 const MAX_RESOLUTION_H = 4000;
@@ -65,6 +53,7 @@ export default function Projects() {
     const [pendingFiles, setPendingFiles] = useState<PendingFile[]>([]);
     const [tourName, setTourName] = useState('');
     const [isTourPublic, setIsTourPublic] = useState(false);
+    const [isUploading, setIsUploading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     console.log(error); // Suppress unused error warning for build
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -73,6 +62,7 @@ export default function Projects() {
     const user = savedUser ? JSON.parse(savedUser) : null;
 
     useEffect(() => {
+        console.log("%c--- A360 PROJECTS V7.3 DEPLOYED ---", "background: #00ff00; color: #000; font-size: 20px; font-weight: bold; padding: 10px;");
         fetchProjects();
 
         // Instant check based on mount
@@ -267,6 +257,7 @@ export default function Projects() {
 
         // Set all to uploading
         setPendingFiles(prev => prev.map(f => f.status === 'done' ? f : { ...f, status: 'uploading' }));
+        setIsUploading(true);
 
         const formData = new FormData();
         // Use independent tourName if set, otherwise fallback to the first file's name
@@ -300,6 +291,8 @@ export default function Projects() {
             const errorMsg = err.response?.data?.error || 'Upload error';
             setPendingFiles(prev => prev.map(f => f.status === 'done' ? f : { ...f, status: 'error', error: errorMsg }));
             toast.error(`Upload failed: ${errorMsg}`);
+        } finally {
+            setIsUploading(false);
         }
     };
 
@@ -587,6 +580,7 @@ export default function Projects() {
                                                     value={tourName}
                                                     placeholder="e.g. Living Room Tour..."
                                                     onChange={e => handleNameChange(e.target.value)}
+                                                    disabled={isUploading}
                                                 />
                                             </div>
                                             <div className="space-y-2 pb-1">
@@ -599,6 +593,7 @@ export default function Projects() {
                                                         isTourPublic ? "text-blue-500 bg-blue-500/10 border-blue-500/30" : "text-muted-foreground bg-muted/80 border-border"
                                                     )}
                                                     onClick={toggleGlobalPublic}
+                                                    disabled={isUploading}
                                                 >
                                                     {isTourPublic ? <Globe className="h-4 w-4 mr-2" /> : <Lock className="h-4 w-4 mr-2" />}
                                                     {isTourPublic ? "Public" : "Private"}
@@ -620,9 +615,10 @@ export default function Projects() {
                                     <div
                                         className={cn(
                                             "border-2 border-dashed border-primary/30 rounded-2xl p-6 hover:bg-primary/5 transition-all text-center group cursor-pointer bg-accent/5 backdrop-blur-sm",
-                                            pendingFiles.length > 0 ? "p-4 py-8" : "p-12"
+                                            pendingFiles.length > 0 ? "p-4 py-8" : "p-12",
+                                            isUploading && "opacity-50 cursor-not-allowed"
                                         )}
-                                        onClick={() => fileInputRef.current?.click()}
+                                        onClick={() => !isUploading && fileInputRef.current?.click()}
                                     >
                                         <input
                                             type="file"
@@ -661,7 +657,7 @@ export default function Projects() {
                                                         </div>
                                                     </div>
                                                     <div className="flex items-center gap-2">
-                                                        {pf.status === 'pending' && (
+                                                        {pf.status === 'pending' && !isUploading && (
                                                             <Button variant="ghost" size="icon" className="h-8 w-8 text-destructive/40 hover:text-destructive hover:bg-destructive/10 rounded-full" onClick={() => handleRemovePending(idx)}>
                                                                 <Trash2 className="h-4 w-4" />
                                                             </Button>
@@ -700,6 +696,26 @@ export default function Projects() {
                                         </>
                                     )}
                                 </Button>
+                                {isUploading && (
+                                    <div className="absolute inset-0 z-[110] bg-white/60 backdrop-blur-md flex flex-col items-center justify-center animate-in fade-in duration-300">
+                                        <div className="relative w-24 h-24 mb-6">
+                                            <div className="absolute inset-0 rounded-full border-4 border-blue-100 border-t-blue-500 animate-spin" />
+                                            <div className="absolute inset-4 rounded-full border-4 border-blue-50 border-b-blue-400 animate-spin-slow" />
+                                            <div className="absolute inset-8 bg-blue-500/10 rounded-full flex items-center justify-center">
+                                                <Upload className="h-6 w-6 text-blue-500 animate-bounce" />
+                                            </div>
+                                        </div>
+                                        <h3 className="text-xl font-black text-slate-800 tracking-tight mb-2">Architecting Your Tour</h3>
+                                        <p className="text-[10px] font-black uppercase tracking-[0.3em] text-blue-500 animate-pulse">
+                                            Slicing {pendingFiles.length} Panoramas into Cubemaps...
+                                        </p>
+                                        <div className="mt-8 flex gap-1">
+                                            {[0, 1, 2].map((i) => (
+                                                <div key={i} className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-bounce" style={{ animationDelay: `${i * 0.15}s` }} />
+                                            ))}
+                                        </div>
+                                    </div>
+                                )}
                             </CardFooter>
                         </Card>
                     </div>
