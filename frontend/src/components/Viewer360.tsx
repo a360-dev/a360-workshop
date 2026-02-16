@@ -3,7 +3,7 @@ import { OrbitControls, PerspectiveCamera, Billboard } from '@react-three/drei';
 import { VRButton, XR, Controllers, Hands } from '@react-three/xr';
 import * as THREE from 'three';
 import { useMemo, useState, useRef } from 'react';
-import { getAssetUrl } from '@/lib/utils';
+import { cn, getAssetUrl } from '@/lib/utils';
 
 interface Viewer360Props {
     panoUrl: string; // Base URL for the 6 faces
