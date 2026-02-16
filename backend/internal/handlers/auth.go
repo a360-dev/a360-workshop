@@ -3,6 +3,7 @@ package handlers
 import (
 	"crypto/rand"
 	"encoding/hex"
+	"log"
 	"time"
 
 	"github.com/gofiber/fiber/v2"
@@ -84,14 +85,14 @@ func (h *AuthHandler) Register(c *fiber.Ctx) error {
 	isAdmin := false
 	regSource := ""
 	validFrom := time.Now()
-	expiresAt := time.Now().AddDate(0, 0, 30) // Default 30 days for Creative Phase
+	expiresAt := time.Now().AddDate(0, 12, 0) // Default 12 months for membership
 
 	if isInvite {
 		isAdmin = invitation.IsAdmin
 		regSource = "Invitation"
 		// Invitations: Individual access starts upon registration
 		validFrom = time.Now()
-		expiresAt = validFrom.AddDate(0, 3, 0) // Fixed 3 months from registration for Workshop Phase
+		expiresAt = validFrom.AddDate(0, 12, 0) // Fixed 12 months from registration
 	} else if isRegCode {
 		projectLimit = regCode.ProjectLimit
 		if regCode.StorageQuota > 0 {
@@ -100,7 +101,7 @@ func (h *AuthHandler) Register(c *fiber.Ctx) error {
 		regSource = "Code:" + regCode.Code
 		// Seminar codes: Individual access starts upon registration
 		validFrom = time.Now()
-		expiresAt = validFrom.AddDate(0, 0, 30) // Fixed 30 days from registration for Creative Phase
+		expiresAt = validFrom.AddDate(0, 12, 0) // Fixed 12 months from registration
 	}
 
 	user := models.User{
@@ -148,12 +149,16 @@ func (h *AuthHandler) Login(c *fiber.Ctx) error {
 
 	var user models.User
 	if err := h.DB.Where("email = ?", req.Email).First(&user).Error; err != nil {
+		log.Printf("[LOGIN DEBUG] User not found for email: [%s]", req.Email)
 		return c.Status(401).JSON(fiber.Map{"error": "Invalid credentials"})
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password)); err != nil {
+		log.Printf("[LOGIN DEBUG] Password mismatch for email: [%s]", req.Email)
 		return c.Status(401).JSON(fiber.Map{"error": "Invalid credentials"})
 	}
+
+	log.Printf("[LOGIN DEBUG] Successful login for email: [%s]", req.Email)
 
 	// Total Lockout Check (Tiered Access: Phase 3 - After 90 days total)
 	if !user.IsAdmin && time.Now().After(user.ExpiresAt.AddDate(0, 0, 60)) {
