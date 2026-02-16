@@ -8,6 +8,8 @@ export function cn(...inputs: ClassValue[]) {
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 const R2_PUBLIC_URL = import.meta.env.VITE_R2_PUBLIC_URL || 'https://pub-2c6a4a0072774a308e398234fc12ea61.r2.dev';
 
+console.log('--- A360 UTILS LOADED V5 ---');
+
 export const getAssetUrl = (path: string) => {
     if (!path) return '';
     if (path.startsWith('http')) return path;
