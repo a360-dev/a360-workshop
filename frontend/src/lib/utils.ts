@@ -8,58 +8,48 @@ export function cn(...inputs: ClassValue[]) {
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 const R2_PUBLIC_URL = import.meta.env.VITE_R2_PUBLIC_URL || 'https://pub-2c6a4a0072774a308e398234fc12ea61.r2.dev';
 
-console.log('--- A360 UTILS LOADED V6 ---');
+console.log('--- A360 UTILS LOADED V7 ---');
 
 export const getAssetUrl = (path: string) => {
     if (!path) return '';
 
     // If it's already an R2 URL, return it
+    const lowerPath = path.toLowerCase();
     if (path.includes('r2.dev')) return path;
 
-    // Normalize: remove API_URL or workshop domain prefix if it exists to allow reprocessing
-    let workingPath = path;
-    if (path.startsWith(API_URL)) {
-        workingPath = path.replace(API_URL, '');
-    } else if (path.startsWith('http')) {
-        // Case-insensitive domain check for our workshop domain
-        if (/https?:\/\/workshop\.a360\.co\.th/i.test(path)) {
-            workingPath = path.replace(/https?:\/\/workshop\.a360\.co\.th/i, '');
-        } else {
-            // Some other external URL, keep as is
-            return path;
-        }
-    }
-
-    // Normalize path: Remove all leading ./ or /
-    const normalizedPath = workingPath.replace(/^(\.\/|\/)+/, '');
-    const lowerPath = normalizedPath.toLowerCase();
-
-    // A360 Pattern: Pano assets (Originals/Thumbnails/Cubemaps)
-    // always live in R2. They might have 'uploads/' prefix or not.
-    // We catch anything in 'uploads/' that isn't explicitly 'media/'
+    // A360 AGGRESSIVE REDIRECTION (V7):
+    // If the path contains 'uploads/' and looks like a pano/cubemap, force it to R2.
+    // This bypasses any domain-match issues with API_URL.
     const isPano = lowerPath.includes('cubemap') ||
         lowerPath.includes('original.jpg') ||
-        lowerPath.includes('thumbnail.jpg') ||
-        (lowerPath.startsWith('uploads/') && !lowerPath.startsWith('uploads/media/'));
+        lowerPath.includes('thumbnail.jpg');
 
-    console.log('[DEBUG-ASSET-V6]', { path, normalizedPath, isPano });
+    // Check for 'uploads/' anywhere in the string
+    const uploadsIdx = lowerPath.indexOf('uploads/');
 
-    if (isPano) {
-        // Strip 'uploads/' if present (regardless of leading slash which was just normalized)
-        const r2Path = normalizedPath.replace(/^uploads\//, '');
+    if (uploadsIdx !== -1 && isPano) {
+        // Extract everything after 'uploads/'
+        // Example: https://workshop.a360.co.th/uploads/abc/cubemap/posx.jpg -> abc/cubemap/posx.jpg
+        const r2Path = path.substring(uploadsIdx + 8); // 'uploads/'.length is 8
         const finalUrl = `${R2_PUBLIC_URL}/${r2Path}`;
-        console.log('[DEBUG-ASSET] Redirecting to R2:', finalUrl);
+        console.log('[DEBUG-ASSET-V7] Redirecting Pano to R2:', { original: path, final: finalUrl });
         return finalUrl;
     }
 
-    // Hotspot media assets
-    if (lowerPath.startsWith('media/') || lowerPath.startsWith('uploads/media/')) {
-        const mediaPath = normalizedPath.replace(/^uploads\//, '');
-        return `${R2_PUBLIC_URL}/${mediaPath}`;
+    // Media assets
+    const mediaIdx = lowerPath.indexOf('media/');
+    if (mediaIdx !== -1) {
+        const r2Path = path.substring(mediaIdx);
+        const finalUrl = `${R2_PUBLIC_URL}/${r2Path}`;
+        return finalUrl;
     }
 
-    // Default to API server
+    // Fallback: If it's already a full URL, trust it (unless it was an uploads path caught above)
+    if (path.startsWith('http')) return path;
+
+    // For relative paths, prepend API_URL
+    const normalizedPath = path.replace(/^(\.\/|\/)+/, '');
     const finalUrl = `${API_URL}/${normalizedPath}`;
-    console.log('[DEBUG-ASSET] Defaulting to API:', finalUrl);
+    console.log('[DEBUG-ASSET-V7] Defaulting to API:', finalUrl);
     return finalUrl;
 };

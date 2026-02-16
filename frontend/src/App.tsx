@@ -68,7 +68,40 @@ const MagicRedirect = () => {
 
 function App() {
     useEffect(() => {
-        console.log("A360 Platform Version: 1.0.7-WS-REFINED");
+        console.log("A360 Platform Version: 1.0.8-WS-V7");
+
+        // Inactivity Timeout Logic: 15 minutes (900,000 ms)
+        const TIMEOUT = 15 * 60 * 1000;
+        let inactivityTimer: NodeJS.Timeout;
+
+        const resetTimer = () => {
+            if (inactivityTimer) clearTimeout(inactivityTimer);
+            inactivityTimer = setTimeout(() => {
+                const token = localStorage.getItem('token');
+                if (token) {
+                    console.warn("Session expired due to inactivity. Logging out.");
+                    localStorage.removeItem('token');
+                    localStorage.removeItem('user');
+                    window.location.href = '/login?reason=inactivity';
+                }
+            }, TIMEOUT);
+        };
+
+        // Events to monitor for activity
+        const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'];
+
+        events.forEach(event => {
+            window.addEventListener(event, resetTimer);
+        });
+
+        resetTimer(); // Initialize timer
+
+        return () => {
+            if (inactivityTimer) clearTimeout(inactivityTimer);
+            events.forEach(event => {
+                window.removeEventListener(event, resetTimer);
+            });
+        };
     }, []);
 
     const user = JSON.parse(localStorage.getItem('user') || '{}');
