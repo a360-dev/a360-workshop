@@ -3,7 +3,7 @@ import { OrbitControls, PerspectiveCamera, Billboard } from '@react-three/drei';
 import { VRButton, XR, Controllers, Hands } from '@react-three/xr';
 import * as THREE from 'three';
 import { useMemo, useState, useRef } from 'react';
-import { cn } from '@/lib/utils';
+import { getAssetUrl } from '@/lib/utils';
 
 interface Viewer360Props {
     panoUrl: string; // Base URL for the 6 faces
@@ -17,12 +17,18 @@ interface Viewer360Props {
 export default function Viewer360({ panoUrl, hotspots, onAddHotspot, onNavigate, onInfoClick, onEditHotspot }: Viewer360Props) {
     const [isTransitioning, setIsTransitioning] = useState(false);
 
+    console.log('[DEBUG-VIEWER-V7] panoUrl:', panoUrl);
+
     // Faces: posx, negx, posy, negy, posz, negz
     const textures = useMemo(() => {
         const loader = new THREE.TextureLoader();
+        loader.setCrossOrigin('anonymous');
         const faces = ['posx', 'negx', 'posy', 'negy', 'posz', 'negz'];
         const texs = faces.map(face => {
-            const t = loader.load(`${panoUrl}/${face}.jpg`);
+            const rawUrl = `${panoUrl}/${face}.jpg`;
+            const finalUrl = getAssetUrl(rawUrl);
+            console.log(`[DEBUG-FACE-V7] ${face} ->`, finalUrl);
+            const t = loader.load(finalUrl);
             // Seam fix: Disable mipmapping and set wrapping to clamp
             t.generateMipmaps = false;
             t.minFilter = THREE.LinearFilter;

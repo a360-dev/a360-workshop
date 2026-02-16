@@ -68,7 +68,8 @@ const MagicRedirect = () => {
 
 function App() {
     useEffect(() => {
-        console.log("A360 Platform Version: 1.0.8-WS-V7");
+        console.log("%c--- A360 CORE V7.1 DEPLOYED ---", "background: #ff0000; color: #fff; font-size: 20px; font-weight: bold; padding: 10px;");
+        console.log("A360 Platform Version: 1.0.8-WS-V7.1");
 
         // Inactivity Timeout Logic: 15 minutes (900,000 ms)
         const TIMEOUT = 15 * 60 * 1000;
