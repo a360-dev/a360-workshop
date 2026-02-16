@@ -8,14 +8,30 @@ export function cn(...inputs: ClassValue[]) {
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8080';
 const R2_PUBLIC_URL = import.meta.env.VITE_R2_PUBLIC_URL || 'https://pub-2c6a4a0072774a308e398234fc12ea61.r2.dev';
 
-console.log('--- A360 UTILS LOADED V5 ---');
+console.log('--- A360 UTILS LOADED V6 ---');
 
 export const getAssetUrl = (path: string) => {
     if (!path) return '';
-    if (path.startsWith('http')) return path;
+
+    // If it's already an R2 URL, return it
+    if (path.includes('r2.dev')) return path;
+
+    // Normalize: remove API_URL or workshop domain prefix if it exists to allow reprocessing
+    let workingPath = path;
+    if (path.startsWith(API_URL)) {
+        workingPath = path.replace(API_URL, '');
+    } else if (path.startsWith('http')) {
+        // Case-insensitive domain check for our workshop domain
+        if (/https?:\/\/workshop\.a360\.co\.th/i.test(path)) {
+            workingPath = path.replace(/https?:\/\/workshop\.a360\.co\.th/i, '');
+        } else {
+            // Some other external URL, keep as is
+            return path;
+        }
+    }
 
     // Normalize path: Remove all leading ./ or /
-    const normalizedPath = path.replace(/^(\.\/|\/)+/, '');
+    const normalizedPath = workingPath.replace(/^(\.\/|\/)+/, '');
     const lowerPath = normalizedPath.toLowerCase();
 
     // A360 Pattern: Pano assets (Originals/Thumbnails/Cubemaps)
@@ -26,7 +42,7 @@ export const getAssetUrl = (path: string) => {
         lowerPath.includes('thumbnail.jpg') ||
         (lowerPath.startsWith('uploads/') && !lowerPath.startsWith('uploads/media/'));
 
-    console.log('[DEBUG-ASSET]', { path, normalizedPath, isPano, R2_URL: R2_PUBLIC_URL });
+    console.log('[DEBUG-ASSET-V6]', { path, normalizedPath, isPano });
 
     if (isPano) {
         // Strip 'uploads/' if present (regardless of leading slash which was just normalized)
