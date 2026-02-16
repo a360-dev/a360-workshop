@@ -7,6 +7,7 @@ import (
 
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/fiber/v2/middleware/cors"
+	"github.com/gofiber/fiber/v2/middleware/limiter"
 	"github.com/gofiber/fiber/v2/middleware/logger"
 	"github.com/gofiber/fiber/v2/middleware/recover"
 	"github.com/joho/godotenv"
@@ -69,10 +70,10 @@ func main() {
 
 	// SELF-HEALING: Populate ValidFrom and ExpiresAt for existing registration codes
 	db.Model(&models.RegistrationCode{}).Where("valid_from = ? OR valid_from IS NULL", time.Time{}).Update("valid_from", gorm.Expr("created_at"))
-	db.Model(&models.RegistrationCode{}).Where("expires_at = ? OR expires_at IS NULL", time.Time{}).Update("expires_at", gorm.Expr("created_at + interval '3 months'"))
+	db.Model(&models.RegistrationCode{}).Where("expires_at = ? OR expires_at IS NULL", time.Time{}).Update("expires_at", gorm.Expr("created_at + interval '12 months'"))
 
 	app := fiber.New(fiber.Config{
-		BodyLimit: 500 * 1024 * 1024, // 500MB for pano uploads
+		BodyLimit: 1024 * 1024 * 1024, // 1GB for large pano/media uploads
 	})
 
 	app.Use(logger.New())
@@ -91,10 +92,23 @@ func main() {
 
 	api := app.Group("/api")
 
-	// Auth routes
+	// Auth routes with Rate Limiting for Login
+	loginLimiter := limiter.New(limiter.Config{
+		Max:        5,
+		Expiration: 1 * time.Minute,
+		KeyGenerator: func(c *fiber.Ctx) string {
+			return c.IP()
+		},
+		LimitReached: func(c *fiber.Ctx) error {
+			return c.Status(429).JSON(fiber.Map{
+				"error": "Too many login attempts. Please wait 1 minute before trying again.",
+			})
+		},
+	})
+
 	authGroup := api.Group("/auth")
 	authGroup.Post("/register", authHandler.Register)
-	authGroup.Post("/login", authHandler.Login)
+	authGroup.Post("/login", loginLimiter, authHandler.Login)
 	authGroup.Post("/forgot-password", authHandler.ForgotPassword)
 	authGroup.Post("/reset-password", authHandler.ResetPassword)
 	authGroup.Get("/invitation-details", authHandler.GetInvitationDetails)
